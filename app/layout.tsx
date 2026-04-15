@@ -1,0 +1,93 @@
+import type { Metadata } from "next";
+import "./globals.css";
+import { getCurrentMember, getCurrentMemberTheme } from "@/lib/session";
+import Link from "next/link";
+import { logOut, updateMemberTheme, getAchievementsData } from "@/app/actions";
+import { Moon, Sun } from "lucide-react";
+import { getActivities, getLastSeen } from "@/lib/activityStore";
+import ActivityDropdown from "@/app/components/ActivityDropdown";
+import AchievementsDropdown from "@/app/components/AchievementsDropdown";
+import { MemberPresenceProvider } from "@/app/components/MemberPresenceContext";
+import AutoRefresh from "@/app/components/AutoRefresh";
+import ProfileModalTrigger from "@/app/components/ProfileModalTrigger";
+
+export const metadata: Metadata = {
+  title: "Sunshine Family Dashboard",
+  description: "A local family dashboard with dinners, weather, photos, notes, and lists",
+};
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const currentMember = await getCurrentMember();
+  const theme = await getCurrentMemberTheme();
+  const activities = getActivities();
+  const lastSeenMap = getLastSeen();
+  const achievementsData = currentMember ? await getAchievementsData() : null;
+
+  return (
+    <html lang="en" className={theme === "dark" ? "dark" : ""}>
+      <body
+        className="bg-gray-50 dark:bg-gray-950 antialiased"
+        style={currentMember?.backgroundImage ? {
+          backgroundImage: `url(${currentMember.backgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
+        } : undefined}
+      >
+        {currentMember && (
+          <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+            <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 hidden sm:block">
+              Sunshine Family Dashboard
+            </span>
+            <div className="flex items-center gap-4 ml-auto">
+              <ProfileModalTrigger member={currentMember} />
+              <ActivityDropdown activities={activities} />
+              {achievementsData && (
+                <AchievementsDropdown
+                  allAchievements={achievementsData.allAchievements}
+                  earnedAchievements={achievementsData.earnedAchievements.map((e) => ({
+                    achievementId: e.achievementId,
+                    earnedAt: e.earnedAt instanceof Date ? e.earnedAt.toISOString() : String(e.earnedAt),
+                  }))}
+                  progress={achievementsData.progress}
+                />
+              )}
+              <form action={updateMemberTheme}>
+                <input type="hidden" name="theme" value={theme === "dark" ? "light" : "dark"} />
+                <button
+                  type="submit"
+                  title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                </button>
+              </form>
+              <Link
+                href="/login"
+                className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors underline"
+              >
+                Switch Profile
+              </Link>
+              <form action={logOut}>
+                <button
+                  type="submit"
+                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                >
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </header>
+        )}
+        <AutoRefresh />
+        <MemberPresenceProvider lastSeenMap={lastSeenMap} currentMemberId={currentMember?.id ?? null}>
+          {children}
+        </MemberPresenceProvider>
+      </body>
+    </html>
+  );
+}

@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Member {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  emoji           String            @default("😊")
+  color           String            @default("blue")
+  theme           String            @default("light")
+  backgroundImage String?
+  createdAt       DateTime          @default(now())
+  todos           Todo[]
+  groceries       Grocery[]
+  notes           Note[]
+  diningOut       DiningOut[]
+  fitnessLogs     FitnessLog[]
+  mealPrepItems   MealPrepItem[]
+  readStates      MemberReadState[]
+  achievements    MemberAchievement[]
+  memberStats     MemberStats?
+  photoFavorites  PhotoFavorite[]
+  comments        Comment[]
+  sharedLinks     SharedLink[]
+}
+
+model FitnessLog {
+  id       Int      @id @default(autoincrement())
+  memberId Int
+  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  date     DateTime // stored as UTC midnight (2026-04-04T00:00:00.000Z)
+
+  @@unique([memberId, date])
+}
+
+model Dinner {
+  id        Int       @id @default(autoincrement())
+  dayOfWeek String    @unique // e.g., "Monday"
+  meal      String
+  comments  Comment[]
+}
+
+model Note {
+  id        Int       @id @default(autoincrement())
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  memberId  Int?
+  member    Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  comments  Comment[]
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  task      String
+  isDone    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  memberId  Int?
+  member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+}
+
+model Grocery {
+  id        Int      @id @default(autoincrement())
+  item      String
+  isBought  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  memberId  Int?
+  member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+}
+
+model DiningOut {
+  id          Int       @id @default(autoincrement())
+  amount      Float
+  description String    @default("")
+  date        DateTime  @default(now())
+  memberId    Int?
+  member      Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  comments    Comment[]
+}
+
+model MealPrepItem {
+  id        Int      @id @default(autoincrement())
+  label     String
+  imageUrl  String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  memberId  Int?
+  member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+}
+
+model MemberReadState {
+  id         Int      @id @default(autoincrement())
+  memberId   Int
+  section    String   // "notes" | "todos" | "groceries" | "diningOut" | "mealPrep"
+  lastSeenAt DateTime @default(now())
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, section])
+}
+
+model Achievement {
+  id          Int                 @id @default(autoincrement())
+  key         String              @unique
+  name        String
+  emoji       String
+  description String
+  category    String              // "fitness" | "todo" | "photos" | "dining"
+  members     MemberAchievement[]
+}
+
+model MemberAchievement {
+  id            Int         @id @default(autoincrement())
+  memberId      Int
+  achievementId Int
+  earnedAt      DateTime    @default(now())
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, achievementId])
+}
+
+model MemberStats {
+  id              Int    @id @default(autoincrement())
+  memberId        Int    @unique
+  todosCompleted  Int    @default(0)
+  photosUploaded  Int    @default(0)
+  member          Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model PhotoFavorite {
+  id       Int    @id @default(autoincrement())
+  memberId Int
+  filename String // e.g. "/photos/abc.jpg"
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, filename])
+}
+
+model SharedLink {
+  id          Int      @id @default(autoincrement())
+  url         String
+  title       String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  memberId    Int?
+  member      Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+}
+
+model Comment {
+  id          Int       @id @default(autoincrement())
+  content     String
+  createdAt   DateTime  @default(now())
+  memberId    Int?
+  member      Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  noteId      Int?
+  note        Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  diningOutId Int?
+  diningOut   DiningOut? @relation(fields: [diningOutId], references: [id], onDelete: Cascade)
+  dinnerId    Int?
+  dinner      Dinner?   @relation(fields: [dinnerId], references: [id], onDelete: Cascade)
+}
