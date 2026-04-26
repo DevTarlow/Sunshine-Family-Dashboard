@@ -1,16 +1,14 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp
 .pnp.js
 
 # testing
 /coverage
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 
 # production
 /build
@@ -24,9 +22,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# environment variables
 .env
+.env*.local
 
 # vercel
 .vercel
@@ -35,19 +33,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
-/prisma/*.db
-/prisma/*.db-journal
+# prisma database
+prisma/*.db
+prisma/*.db-journal
 
-/app/generated/prisma
+# opencode (dev notes)
+AGENTS.md
 
-public/photos/*.jpg
-public/photos/*.png
-public/photos/*.webp
+# distribution
+distribution/
+*.zip
 
-.next/
-node_modules/
-out/
-build/
-
-FamilyDashboard.code-workspace
+# misc
+*.code-workspace

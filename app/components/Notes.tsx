@@ -60,7 +60,7 @@ export default function Notes({ initialNotes, unreadCount }: NotesProps) {
     setNewNote("");
     generateCelebration("a new note was added to the family dashboard").then((msg) => {
       if (msg) setCelebration(msg);
-    });
+    }).catch(() => {});
   };
 
   const startEdit = (note: Note) => {
@@ -78,9 +78,6 @@ export default function Notes({ initialNotes, unreadCount }: NotesProps) {
 
   const handleDelete = async (id: number) => {
     await deleteNote(id);
-    generateCelebration("a note was swept away from the family dashboard").then((msg) => {
-      if (msg) setCelebration(msg);
-    });
   };
 
   return (

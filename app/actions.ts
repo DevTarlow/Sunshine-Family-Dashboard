@@ -3,12 +3,66 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { promises as fs } from "fs";
-import { GoogleGenAI } from "@google/genai";
 import path from "path";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCurrentMemberId, getCurrentMember } from "@/lib/session";
 import { logActivity, touchLastSeen, getActivities, getLastSeen } from "@/lib/activityStore";
+
+// ===== LOCAL LLM =====
+
+async function callLocalLLM(prompt: string, options?: { systemPrompt?: string }): Promise<string> {
+  const member = await getCurrentMember();
+  if (!member) return "";
+  
+  const serverUrl = member.llmServerUrl;
+  const model = member.llmModel;
+  
+  if (!serverUrl || !model) {
+    // No LLM configured for this member
+    return "";
+  }
+  
+  try {
+    const response = await fetch(`${serverUrl}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: options?.systemPrompt || "You are a helpful assistant." },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 100,
+        temperature: 0.7,
+        reasoning_effort: "low",
+      }),
+    });
+    
+    if (!response.ok) {
+      console.error(`LLM request failed: ${response.status} ${response.statusText}`);
+      return "";
+    }
+    
+    const data = await response.json();
+    const msgContent = data.choices?.[0]?.message?.content;
+    let raw = (typeof msgContent === "string" && msgContent.trim() ? msgContent.trim() : "");
+    
+    const lines = raw.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.match(/^(\*\*|\d+\.|[-*]\s)/) && trimmed.length > 10) {
+        return trimmed;
+      }
+    }
+    return raw.trim();
+  } catch (error) {
+    console.error("Error calling local LLM:", error);
+    return "";
+  }
+}
 
 // ===== MEMBERS =====
 
@@ -78,6 +132,26 @@ export async function logOut() {
   redirect("/login");
 }
 
+export async function resetDatabase() {
+  const cookieStore = await cookies();
+  cookieStore.delete("family-member-id");
+  await prisma.comment.deleteMany();
+  await prisma.photoFavorite.deleteMany();
+  await prisma.memberAchievement.deleteMany();
+  await prisma.memberStats.deleteMany();
+  await prisma.memberReadState.deleteMany();
+  await prisma.sharedLink.deleteMany();
+  await prisma.mealPrepItem.deleteMany();
+  await prisma.fitnessLog.deleteMany();
+  await prisma.diningOut.deleteMany();
+  await prisma.grocery.deleteMany();
+  await prisma.todo.deleteMany();
+  await prisma.note.deleteMany();
+  await prisma.dinner.deleteMany();
+  await prisma.member.deleteMany();
+  redirect("/login");
+}
+
 export async function updateMemberTheme(formData: FormData) {
   const theme = formData.get("theme") as string;
   if (theme !== "light" && theme !== "dark") return;
@@ -88,6 +162,165 @@ export async function updateMemberTheme(formData: FormData) {
     data: { theme },
   });
   revalidatePath("/");
+}
+
+export async function updateNotificationsEnabled(formData: FormData) {
+  const enabled = formData.get("enabled");
+  // enabled can be "on" for checkbox, but we'll treat as boolean string
+  const notificationsEnabled = enabled === "true" || enabled === "on";
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return;
+  await prisma.member.update({
+    where: { id: memberId },
+    data: { notificationsEnabled },
+  });
+  revalidatePath("/");
+}
+
+// ===== CAM URL =====
+
+export async function getCamUrl() {
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return null;
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+  });
+  // Type assertion to handle Prisma type caching issue
+  return (member as any)?.camUrl ?? null;
+}
+
+export async function updateCamUrl(formData: FormData) {
+  const camUrl = formData.get("camUrl") as string;
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return;
+  await prisma.member.update({
+    where: { id: memberId },
+    data: { camUrl: camUrl?.trim() || null },
+  });
+  revalidatePath("/");
+}
+
+// ===== REFRESH INTERVALS =====
+
+export async function getMemberRefreshSettings() {
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return { autoRefreshInterval: 30000, vibeRefreshInterval: 0 };
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+  });
+  return {
+    autoRefreshInterval: (member as any)?.autoRefreshInterval ?? 30000,
+    vibeRefreshInterval: (member as any)?.vibeRefreshInterval ?? 0,
+  };
+}
+
+export async function updateAutoRefreshInterval(formData: FormData) {
+  const interval = formData.get("interval");
+  const autoRefreshInterval = interval ? parseInt(String(interval), 10) : 30000;
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return;
+  await prisma.member.update({
+    where: { id: memberId },
+    data: { autoRefreshInterval },
+  });
+  revalidatePath("/");
+}
+
+export async function updateVibeRefreshInterval(formData: FormData) {
+  const interval = formData.get("interval");
+  const vibeRefreshInterval = interval ? parseInt(String(interval), 10) : 0;
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return;
+  await prisma.member.update({
+    where: { id: memberId },
+    data: { vibeRefreshInterval },
+  });
+  revalidatePath("/");
+}
+
+// ===== LLM CONFIG =====
+
+export async function getLLMConfig() {
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return { serverUrl: null, model: null };
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+  });
+  // Type assertion to handle Prisma type caching issue
+  return {
+    serverUrl: (member as any)?.llmServerUrl ?? null,
+    model: (member as any)?.llmModel ?? null,
+  };
+}
+
+export async function updateLLMConfig(formData: FormData) {
+  const serverUrl = formData.get("serverUrl") as string;
+  const model = formData.get("model") as string;
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return;
+  await prisma.member.update({
+    where: { id: memberId },
+    data: {
+      llmServerUrl: serverUrl?.trim() || null,
+      llmModel: model?.trim() || null,
+    },
+  });
+  revalidatePath("/");
+}
+
+// ===== WEATHER CONFIG =====
+
+export async function getWeatherSettings() {
+  const memberId = await getCurrentMemberId();
+  if (!memberId) {
+    return { apiKey: null, city: null, units: null };
+  }
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+  });
+  return {
+    apiKey: (member as any)?.weatherApiKey ?? null,
+    city: (member as any)?.weatherCity ?? null,
+    units: (member as any)?.weatherUnits ?? null,
+  };
+}
+
+export async function updateWeatherSettings(formData: FormData) {
+  const apiKey = formData.get("apiKey") as string;
+  const city = formData.get("city") as string;
+  const units = formData.get("units") as string;
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return;
+  await prisma.member.update({
+    where: { id: memberId },
+    data: {
+      weatherApiKey: apiKey?.trim() || null,
+      weatherCity: city?.trim() || null,
+      weatherUnits: units || null,
+    },
+  });
+  revalidatePath("/");
+}
+
+// ===== VIBE STATE =====
+
+export async function getVibeState(): Promise<{ message: string | null; generatedAt: Date | null }> {
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return { message: null, generatedAt: null };
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+    select: { vibeMessage: true, vibeGeneratedAt: true },
+  });
+  return { message: member?.vibeMessage ?? null, generatedAt: member?.vibeGeneratedAt ?? null };
+}
+
+export async function saveVibeState(message: string) {
+  const memberId = await getCurrentMemberId();
+  if (!memberId) return;
+  await prisma.member.update({
+    where: { id: memberId },
+    data: { vibeMessage: message, vibeGeneratedAt: new Date() },
+  });
 }
 
 // ===== DINNERS =====
@@ -143,42 +376,29 @@ export async function reorderDinners(entries: { dayOfWeek: string; meal: string 
 }
 
 export async function generateCelebration(context: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return "";
+  const prompt = `You are a fun, enthusiastic family dashboard assistant. Write a short, silly, family-friendly celebratory message or rhyme (1-2 sentences, emojis welcome) to celebrate this event: ${context}. Be creative and specific to the event. Reply with only the celebration message, nothing else.`;
+  return await callLocalLLM(prompt, {
+    systemPrompt: "You are a fun, enthusiastic family dashboard assistant.",
+  });
+}
 
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: `You are a fun, enthusiastic family dashboard assistant. Write a short, silly, family-friendly celebratory message or rhyme (1-2 sentences, emojis welcome) to celebrate this event: ${context}. Be creative and specific to the event. Reply with only the celebration message, nothing else.`,
-    });
-    const message = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
-    return message;
-  } catch {
-    return "";
-  }
+export async function generateVibeMessage(): Promise<string> {
+  const prompt = `Write a short, uplifting, family-friendly message (1-2 sentences, emojis welcome) to set a positive tone for the day. Be warm, encouraging, and specific to spending quality time with family. Reply with only the message, nothing else.`;
+  return await callLocalLLM(prompt, {
+    systemPrompt: "You are a cheerful, motivational family dashboard assistant who writes brief, heartwarming messages.",
+  });
 }
 
 export async function suggestDinnerIdea(): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return "";
+  const dinners = await prisma.dinner.findMany({ orderBy: { id: "asc" } });
+  const mealList = dinners.length > 0
+    ? dinners.map((d) => `- ${d.meal}`).join("\n")
+    : "No meals planned yet this week.";
 
-  try {
-    const dinners = await prisma.dinner.findMany({ orderBy: { id: "asc" } });
-    const mealList = dinners.length > 0
-      ? dinners.map((d) => `- ${d.meal}`).join("\n")
-      : "No meals planned yet this week.";
-
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: `We are a family planning our weekly dinners. Here are the meals on our plan this week:\n${mealList}\n\nSuggest one dinner idea that would fit our tastes but is not already on the list. Reply with only the dinner name, nothing else.`,
-    });
-    const suggestion = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
-    return suggestion;
-  } catch {
-    return "";
-  }
+  const prompt = `We are a family planning our weekly dinners. Here are the meals on our plan this week:\n${mealList}\n\nSuggest one dinner idea that would fit our tastes but is not already on the list. Reply with only the dinner name, nothing else.`;
+  return await callLocalLLM(prompt, {
+    systemPrompt: "You are a helpful family dinner planner with an exhaustive knowledge of global cuisines, seasonal ingredients, and creative family cooking.",
+  });
 }
 
 // ===== NOTES =====
@@ -329,10 +549,30 @@ export async function deleteAllGroceries() {
 
 // ===== WEATHER =====
 
+async function getMemberWeatherSettings() {
+  const memberId = await getCurrentMemberId();
+  if (!memberId) {
+    return { apiKey: null, city: null, units: null };
+  }
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+  });
+  return {
+    apiKey: (member as any)?.weatherApiKey ?? null,
+    city: (member as any)?.weatherCity ?? null,
+    units: (member as any)?.weatherUnits ?? null,
+  };
+}
+
 export async function getWeatherData() {
-  const apiKey = process.env.OPENWEATHERMAP_API_KEY;
-  const city = process.env.OPENWEATHERMAP_CITY || "New York";
-  const units = process.env.OPENWEATHERMAP_UNITS || "imperial";
+  const envApiKey = process.env.OPENWEATHERMAP_API_KEY;
+  const envCity = process.env.OPENWEATHERMAP_CITY || "gresham";
+  const envUnits = process.env.OPENWEATHERMAP_UNITS || "imperial";
+  const memberSettings = await getMemberWeatherSettings();
+
+  const apiKey = memberSettings.apiKey || envApiKey;
+  const city = memberSettings.city || envCity;
+  const units = memberSettings.units || envUnits;
 
   if (!apiKey || apiKey === "your_api_key_here") {
     return {
@@ -359,15 +599,20 @@ export async function getWeatherData() {
     };
   } catch (error) {
     return {
-      error: "Failed to fetch weather data",
+      error: "Set your OpenWeatherMap API key in Settings to see weather",
     };
   }
 }
 
 export async function getWeatherForecast() {
-  const apiKey = process.env.OPENWEATHERMAP_API_KEY;
-  const city = process.env.OPENWEATHERMAP_CITY || "New York";
-  const units = process.env.OPENWEATHERMAP_UNITS || "imperial";
+  const envApiKey = process.env.OPENWEATHERMAP_API_KEY;
+  const envCity = process.env.OPENWEATHERMAP_CITY || "gresham";
+  const envUnits = process.env.OPENWEATHERMAP_UNITS || "imperial";
+  const memberSettings = await getMemberWeatherSettings();
+
+  const apiKey = memberSettings.apiKey || envApiKey;
+  const city = memberSettings.city || envCity;
+  const units = memberSettings.units || envUnits;
 
   if (!apiKey || apiKey === "your_api_key_here") {
     return { days: [] };
@@ -720,24 +965,15 @@ export async function toggleFitnessLog(dateStr: string) {
 // ===== MEAL PREP FRIDGE =====
 
 async function fetchFoodEmoji(label: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return "🍽️";
-
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: `Reply with a single food emoji that best represents: "${label}". Only the emoji character, nothing else.`,
-    });
-    const emoji = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
-    // Validate it looks like an emoji (non-ASCII, short)
-    if (emoji.length <= 8 && emoji.length > 0 && /\P{ASCII}/u.test(emoji)) {
-      return emoji;
-    }
-    return "🍽️";
-  } catch {
-    return "🍽️";
+  const prompt = `Reply with a single food emoji that best represents: "${label}". Only the emoji character, nothing else.`;
+  const emoji = await callLocalLLM(prompt, {
+    systemPrompt: "You are a helpful assistant that responds with exactly one emoji.",
+  });
+  // Validate it looks like an emoji (non-ASCII, short)
+  if (emoji && emoji.length <= 8 && /\P{ASCII}/u.test(emoji)) {
+    return emoji.trim();
   }
+  return "🍽️";
 }
 
 export async function getMealPrepItems() {

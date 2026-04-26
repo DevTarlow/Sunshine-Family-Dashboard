@@ -95,7 +95,7 @@ export default function FitnessTracker({ initialLogs, currentMemberId }: Props) 
     if (!wasLogged) {
       generateCelebration("a family member just logged their workout for the day").then((msg) => {
         if (msg) setCelebration(msg);
-      });
+      }).catch(() => {});
     }
   }
 

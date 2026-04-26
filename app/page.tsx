@@ -10,14 +10,14 @@ import DiningOut from "@/app/components/DiningOut";
 import FitnessTracker from "@/app/components/FitnessTracker";
 import MealPrepFridge from "@/app/components/MealPrepFridge";
 import LinkBoard from "@/app/components/LinkBoard";
-import { getDinners, getNotes, getTodos, getGroceries, getPhotos, getDiningOutEntries, getFitnessLogs, getMealPrepItems, getUnreadCounts, getFavoritePhotos, getSharedLinks } from "@/app/actions";
+import { getDinners, getNotes, getTodos, getGroceries, getPhotos, getDiningOutEntries, getFitnessLogs, getMealPrepItems, getUnreadCounts, getFavoritePhotos, getSharedLinks, getCamUrl, getMemberRefreshSettings } from "@/app/actions";
 import { getCurrentMemberId } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   // Fetch all data in parallel
-  const [dinners, notes, todos, groceries, photos, diningOut, fitnessLogs, currentMemberId, mealPrepItems, unreadCounts, favoritePhotos, sharedLinks] = await Promise.all([
+  const [dinners, notes, todos, groceries, photos, diningOut, fitnessLogs, currentMemberId, mealPrepItems, unreadCounts, favoritePhotos, sharedLinks, camUrl, refreshSettings] = await Promise.all([
     getDinners(),
     getNotes(),
     getTodos(),
@@ -30,6 +30,8 @@ export default async function Home() {
     getUnreadCounts(),
     getFavoritePhotos(),
     getSharedLinks(),
+    getCamUrl(),
+    getMemberRefreshSettings(),
   ]);
 
   return (
@@ -48,7 +50,7 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
           {/* Vibe of the Day - spans 1 column */}
           <div className="md:col-span-1">
-            <VibeOfTheDay />
+            <VibeOfTheDay vibeRefreshInterval={refreshSettings.vibeRefreshInterval} />
           </div>
 
           {/* Weather Widget - spans 1 column */}
@@ -58,7 +60,7 @@ export default async function Home() {
 
           {/* Cannon Beach Cam - spans 1 column */}
           <div className="md:col-span-1">
-            <CannonBeachCam />
+            <CannonBeachCam initialCamUrl={camUrl} />
           </div>
 
           {/* Photo Carousel - spans full width on larger screens */}
@@ -73,7 +75,7 @@ export default async function Home() {
 
           {/* Fitness Tracker - full width */}
           <div className="md:col-span-2 lg:col-span-3">
-            <FitnessTracker initialLogs={fitnessLogs.map(log => ({ ...log, date: log.date.toISOString() }))} currentMemberId={currentMemberId} />
+            <FitnessTracker initialLogs={fitnessLogs.map((log: any) => ({ ...log, date: log.date.toISOString() }))} currentMemberId={currentMemberId} />
           </div>
 
           {/* Dining Out Tracker */}
@@ -108,7 +110,7 @@ export default async function Home() {
         </div>
 
         <footer className="mt-8 text-center text-gray-500 text-sm">
-          <p>© {new Date().getFullYear()} Family Dashboard - Built with Next.js</p>
+          <p>© {new Date().getFullYear()} Family Dashboard - Built with Next.js, AI, and ❤️</p>
         </footer>
       </div>
     </main>

@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { getCurrentMember, getCurrentMemberTheme } from "@/lib/session";
+import { getCurrentMember, getCurrentMemberTheme, getCurrentMemberNotificationsEnabled } from "@/lib/session";
 import Link from "next/link";
-import { logOut, updateMemberTheme, getAchievementsData } from "@/app/actions";
-import { Moon, Sun } from "lucide-react";
+import { logOut, getAchievementsData, getMemberRefreshSettings } from "@/app/actions";
 import { getActivities, getLastSeen } from "@/lib/activityStore";
 import ActivityDropdown from "@/app/components/ActivityDropdown";
 import AchievementsDropdown from "@/app/components/AchievementsDropdown";
 import { MemberPresenceProvider } from "@/app/components/MemberPresenceContext";
 import AutoRefresh from "@/app/components/AutoRefresh";
 import ProfileModalTrigger from "@/app/components/ProfileModalTrigger";
+import SettingsModalTrigger from "@/app/components/SettingsModalTrigger";
 
 export const metadata: Metadata = {
   title: "Sunshine Family Dashboard",
@@ -23,6 +23,8 @@ export default async function RootLayout({
 }>) {
   const currentMember = await getCurrentMember();
   const theme = await getCurrentMemberTheme();
+  const notificationsEnabled = await getCurrentMemberNotificationsEnabled();
+  const refreshSettings = await getMemberRefreshSettings();
   const activities = getActivities();
   const lastSeenMap = getLastSeen();
   const achievementsData = currentMember ? await getAchievementsData() : null;
@@ -31,12 +33,13 @@ export default async function RootLayout({
     <html lang="en" className={theme === "dark" ? "dark" : ""}>
       <body
         className="bg-gray-50 dark:bg-gray-950 antialiased"
-        style={currentMember?.backgroundImage ? {
-          backgroundImage: `url(${currentMember.backgroundImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-        } : undefined}
+        // Temporarily disabled background image to test CSS
+        // style={currentMember?.backgroundImage ? {
+        //   backgroundImage: `url(${currentMember.backgroundImage})`,
+        //   backgroundSize: "cover",
+        //   backgroundPosition: "center",
+        //   backgroundAttachment: "fixed",
+        // } : undefined}
       >
         {currentMember && (
           <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
@@ -56,16 +59,13 @@ export default async function RootLayout({
                   progress={achievementsData.progress}
                 />
               )}
-              <form action={updateMemberTheme}>
-                <input type="hidden" name="theme" value={theme === "dark" ? "light" : "dark"} />
-                <button
-                  type="submit"
-                  title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                  className="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                </button>
-              </form>
+              <SettingsModalTrigger 
+                currentTheme={theme} 
+                notificationsEnabled={notificationsEnabled}
+                camUrl={currentMember?.camUrl ?? null}
+                autoRefreshInterval={refreshSettings.autoRefreshInterval}
+                vibeRefreshInterval={refreshSettings.vibeRefreshInterval}
+              />
               <Link
                 href="/login"
                 className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors underline"
@@ -83,7 +83,7 @@ export default async function RootLayout({
             </div>
           </header>
         )}
-        <AutoRefresh />
+        <AutoRefresh autoRefreshInterval={refreshSettings.autoRefreshInterval} />
         <MemberPresenceProvider lastSeenMap={lastSeenMap} currentMemberId={currentMember?.id ?? null}>
           {children}
         </MemberPresenceProvider>

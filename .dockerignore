@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.next
+.git
+.gitignore
+README.md
+.dockerignore
+docker-compose*.yml
+Dockerfile
+start.bat
+start.sh
+.env.example
+*.md
+.vscode
+.idea
+*.db-journal

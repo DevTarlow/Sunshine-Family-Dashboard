@@ -1,160 +1,168 @@
 # Family Dashboard
 
-A local web application for managing family activities, built with Next.js, TypeScript, and Tailwind CSS.
+A local web app for your family to share weather, photos, dinner plans, fitness logs, grocery lists, notes, and more. Each family member has their own profile with a personal color and emoji.
 
 ## Features
 
-- **Weekly Dinners**: Plan meals for each day of the week
-- **Weather Widget**: Display current weather conditions (requires OpenWeatherMap API key)
-- **Photo Carousel**: Auto-rotating slideshow of family photos
-- **Shared Notes**: Collaborative note-taking for family members
-- **To-Do List**: Track tasks with checkbox completion
-- **Grocery List**: Manage shopping items with "bought" status
+- **Weather** - Current conditions for your city
+- **Photo Carousel** - Auto-rotating family photos
+- **Weekly Dinners** - Plan meals for each day
+- **Fitness Tracker** - Track daily exercise for the whole family
+- **Dining Out Log** - Track restaurant visits
+- **To-Do List** - Family task list with checkboxes
+- **Grocery List** - Shopping list with "bought" status
+- **Notes** - Shared notes for the family
+- **Meal Prep** - Plan weekly meal prep items
+- **Achievements** - Earn badges for family activities
+- **Vibe of the Day** - AI-generated uplifting message
+- **And more!** - Explore the dashboard to discover all features
 
-## Tech Stack
+## Quick Start (Recommended)
 
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: SQLite
-- **ORM**: Prisma
-- **Icons**: lucide-react
+### 1. Install Docker
 
-## Setup Instructions
+Download and install **Docker Desktop** from: https://www.docker.com/products/docker-desktop
 
-### 1. Install Dependencies
+### 2. Start the App
+
+**Windows:** Double-click `start.bat`
+
+**Mac/Linux:** Open a terminal, navigate to this folder, and run:
+```bash
+./start.sh
+```
+
+### 3. Open in Browser
+
+Go to: http://localhost:3000
+
+That's it! The app will open in your browser.
+
+## First-Time Setup
+
+1. On first launch, you'll be asked to create your profile
+2. Enter your name, pick an emoji, and choose a color
+3. Click "Create Profile" to get started
+
+### Setting Up Weather (Optional)
+
+The weather widget needs an API key to work. You can set this up in the app:
+
+1. Click the **gear icon** in the top-right corner
+2. Scroll to "Weather Configuration"
+3. Enter your OpenWeatherMap API key, city, and units
+4. Click "Save Weather Settings"
+
+**Get a free API key:** https://openweathermap.org/api
+
+### Adding Photos
+
+To add photos to the carousel:
+
+1. Put image files (.jpg, .png, .gif, webp) in the `public/photos/` folder
+2. Refresh the page to see them in the carousel
+
+### Configuring AI Features (Optional)
+
+AI features (vibe of the day, dinner suggestions, meal prep thumbnails) require a local LLM.
+
+1. Install a local LLM like LM Studio (https://lmstudio.ai/)
+2. Click the **gear icon** in Settings
+3. Enter your LLM server URL (e.g., http://localhost:11434)
+4. Enter the model name (e.g., google/gemma-4-e4b)
+5. Click "Save AI Config"
+
+## Accessing from Other Devices
+
+The app runs on your local network. To access from your phone or other computers:
+
+1. Find your computer's IP address:
+   - **Windows:** Open Command Prompt and type `ipconfig`
+   - **Mac:** Open Terminal and type `ip addr show`
+   - **Linux:** Open Terminal and type `ip addr show`
+
+2. On another device, go to: `http://[your-ip-address]:3000`
+
+## Stopping the App
+
+**Windows:** Press Ctrl+C in the terminal window, then close the window
+
+**Mac/Linux:** Press Ctrl+C in the terminal
+
+## Troubleshooting
+
+### Port 3000 is already in use
+
+If you get an error about port 3000, you can change the port in docker-compose.yml:
+
+```yaml
+ports:
+  - "3001:3000"  # Change to 3001 or another port
+```
+
+Then access the app at http://localhost:3001
+
+### Docker won't start
+
+- Make sure Docker Desktop is running (look for the whale icon in your system tray/menu bar)
+- Try restarting Docker Desktop
+- If that doesn't work, try restarting your computer
+
+### Photos aren't showing
+
+- Make sure image files are in the `public/photos/` folder (not in a subfolder)
+- Supported formats: .jpg, .jpeg, .png, .gif, .webp
+- Try refreshing the page (F5 or Ctrl+R)
+
+### Weather shows an error
+
+- Check that your API key is correct in Settings
+- Make sure you entered your city name correctly
+- Free API keys have limits - wait a few minutes if you've hit the limit
+
+### I deleted my profile
+
+No problem! The login page will let you create a new profile. Your previous data is still in the database.
+
+### I want to start fresh
+
+1. Click the **gear icon**
+2. Scroll down to "Data & Reset"
+3. Click "Reset database"
+4. Confirm twice
+
+This will delete ALL data and let you start fresh.
+
+## Manual Setup (Without Docker)
+
+If you prefer not to use Docker:
+
+### Prerequisites
+
+- Node.js 20+ (https://nodejs.org)
+- npm (comes with Node.js)
+
+### Steps
 
 ```bash
+# Install dependencies
 npm install
-```
 
-### 2. Configure Environment Variables
+# Copy the environment file
+cp .env.example .env
 
-Update the `.env` file with your settings:
-
-```env
-# OpenWeatherMap API Configuration
-OPENWEATHERMAP_API_KEY="your_actual_api_key_here"
-OPENWEATHERMAP_CITY="your_city_name"
-OPENWEATHERMAP_UNITS="imperial"  # or "metric" for Celsius
-```
-
-To get an API key:
-1. Visit [OpenWeatherMap](https://openweathermap.org/api)
-2. Sign up for a free account
-3. Generate an API key
-4. Replace `your_actual_api_key_here` with your key
-
-### 3. Add Photos (Optional)
-
-Add image files (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`) to the `public/photos/` folder for the carousel feature.
-
-### 4. Start the Development Server
-
-```bash
+# Start the development server
 npm run dev
 ```
 
-The application will be accessible at:
-- **Local**: http://localhost:3000
-- **Network**: http://[your-local-ip]:3000
+Then open http://localhost:3000
 
-The `-H 0.0.0.0` flag allows access from other devices on your local network.
+## Tech Details
 
-## Usage
-
-### Weekly Dinners
-- Click "Add" next to any day to set a dinner plan
-- Click "Edit" to modify an existing plan
-- Click the "X" to clear a plan
-
-### Weather
-- Updates automatically based on your configured city
-- Shows temperature, conditions, and icon
-- Data refreshes every 10 minutes
-
-### Photo Carousel
-- Automatically rotates every 10 seconds
-- Use arrow buttons to navigate manually
-- Click dots at the bottom to jump to specific photos
-
-### Shared Notes
-- Add notes using the text area at the top
-- Click "Edit" to modify existing notes
-- Click the "X" to delete notes
-- Shows timestamp of last update
-
-### To-Do List
-- Add tasks using the input field
-- Click checkbox to mark as complete
-- Click "X" to delete tasks
-
-### Grocery List
-- Add items using the input field
-- Click checkbox to mark as bought  
-- Click "X" to remove items
-
-## Database
-
-The app uses SQLite with Prisma ORM. The database file is located at `prisma/dev.db`.
-
-To reset the database:
-
-```bash
-rm prisma/dev.db
-npx prisma db push
-```
-
-## Building for Production
-
-```bash
-npm run build
-npm start
-```
-
-## Network Access
-
-The app is configured to be accessible on your local network. Find your local IP address:
-
-**Linux/Mac:**
-```bash
-ip addr show  # Linux
-ifconfig      # Mac
-```
-
-**Windows:**
-```cmd
-ipconfig
-```
-
-Then access from other devices at: `http://[your-ip]:3000`
-
-## Project Structure
-
-```
-FamilyDashboard/
-├── app/
-│   ├── actions.ts           # Server Actions for data mutations
-│   ├── components/          # React components
-│   │   ├── Carousel.tsx
-│   │   ├── GroceryList.tsx
-│   │   ├── Notes.tsx
-│   │   ├── TodoList.tsx
-│   │   ├── Weather.tsx
-│   │   └── WeeklyDinners.tsx
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Home page
-├── lib/
-│   └── prisma.ts            # Prisma client instance
-├── prisma/
-│   ├── schema.prisma        # Database schema
-│   └── dev.db               # SQLite database (generated)
-├── public/
-│   └── photos/              # Photo carousel images
-├── .env                     # Environment variables
-└── package.json             # Dependencies and scripts
-```
+- **Framework:** Next.js 15 (App Router)
+- **Database:** SQLite (stored in prisma/dev.db)
+- **ORM:** Prisma
+- **Styling:** Tailwind CSS
 
 ## License
 

@@ -8,25 +8,36 @@ datasource db {
 }
 
 model Member {
-  id              Int               @id @default(autoincrement())
-  name            String            @unique
-  emoji           String            @default("😊")
-  color           String            @default("blue")
-  theme           String            @default("light")
-  backgroundImage String?
-  createdAt       DateTime          @default(now())
-  todos           Todo[]
-  groceries       Grocery[]
-  notes           Note[]
-  diningOut       DiningOut[]
-  fitnessLogs     FitnessLog[]
-  mealPrepItems   MealPrepItem[]
-  readStates      MemberReadState[]
-  achievements    MemberAchievement[]
-  memberStats     MemberStats?
-  photoFavorites  PhotoFavorite[]
-  comments        Comment[]
-  sharedLinks     SharedLink[]
+  id                  Int               @id @default(autoincrement())
+  name                String            @unique
+  emoji               String            @default("😊")
+  color               String            @default("blue")
+  theme               String            @default("light")
+  notificationsEnabled Boolean          @default(true)
+  backgroundImage     String?
+  camUrl              String?           // Optional custom CAM URL (e.g., Cannon Beach Cam)
+  llmServerUrl        String?           // Local LLM server URL (OpenAI-compatible)
+  llmModel            String?           // Model name (e.g., "llama3.2")
+  vibeMessage         String?           // Last generated Vibe of the Day message
+  vibeGeneratedAt     DateTime?         // When the vibe message was last generated
+  weatherApiKey    String?           // OpenWeatherMap API key (member-specific)
+  weatherCity     String?           // Weather city (member-specific)
+  weatherUnits   String?           // Weather units: imperial | metric (member-specific)
+  autoRefreshInterval Int          @default(30000)  // Dashboard auto-refresh in ms
+  vibeRefreshInterval Int          @default(0)       // Vibe widget refresh (0 = manual only)
+  createdAt        DateTime          @default(now())
+  todos               Todo[]
+  groceries           Grocery[]
+  notes               Note[]
+  diningOut           DiningOut[]
+  fitnessLogs         FitnessLog[]
+  mealPrepItems       MealPrepItem[]
+  readStates          MemberReadState[]
+  achievements        MemberAchievement[]
+  memberStats         MemberStats?
+  photoFavorites      PhotoFavorite[]
+  comments            Comment[]
+  sharedLinks         SharedLink[]
 }
 
 model FitnessLog {

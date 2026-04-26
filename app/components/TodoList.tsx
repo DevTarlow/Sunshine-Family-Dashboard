@@ -55,14 +55,13 @@ export default function TodoList({ initialTodos, unreadCount }: TodoListProps) {
     setNewTask("");
     generateCelebration(`a new to-do task was added: "${task}"`).then((msg) => {
       if (msg) setCelebration(msg);
-    });
+    }).catch(() => {});
   };
 
   const handleDelete = async (id: number) => {
+    const msg = await generateCelebration("a to-do task was crossed off and removed from the list");
+    if (msg) setCelebration(msg);
     await deleteTodo(id);
-    generateCelebration("a to-do task was crossed off and removed from the list").then((msg) => {
-      if (msg) setCelebration(msg);
-    });
   };
 
   return (
