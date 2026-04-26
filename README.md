@@ -12,6 +12,10 @@ Built with privacy in mind, Family Dashboard requires no cloud databases or subs
 
 This is something my wife and I use daily, so I figured some of you may too. Give it a try!
 
+<img width="1352" height="890" alt="sunshine-family-dashboard-screenshot" src="https://github.com/user-attachments/assets/6519c3e3-5b3a-46ff-ac3b-02dfaa87ccb3" />
+
+More photos and info on my projects page: <a href="https://tarlow.space/projects/sunshine-family-dashboard/">Sunshine Family Dashboard</a>
+
 ## Features
 
 - **Weather** - Current conditions for your city
