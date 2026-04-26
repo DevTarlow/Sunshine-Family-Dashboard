@@ -1,6 +1,16 @@
 # Family Dashboard
 
-A local web app for your family to share weather, photos, dinner plans, fitness logs, grocery lists, notes, and more. Each family member has their own profile with a personal color and emoji.
+The Sunshine Family Dashboard is a lightweight, local-first web app designed to be a simple but effective home dashboard.
+
+Packaged in a single Docker container and built with Next.js and SQLite, it allows your family to manage weekly dinner menus, shared grocery lists, daily to-dos, keep track of fitness days, track eating out costs, and take sticky notes.
+
+It also features a live local weather widget and a rotating carousel of your favorite family photos.
+
+The dashboard uses your local LLM to generate unique recipe ideas, custom toast alerts, and generate a vibe of the day. All AI data is processed through your local LLM which can be setup in settings.
+
+Built with privacy in mind, Family Dashboard requires no cloud databases or subscriptions and it runs entirely on your own local network, ensuring your family’s data stays fast, secure, and 100% yours.
+
+This is something my wife and I use daily, so I figured some of you may too. Give it a try!
 
 ## Features
 
