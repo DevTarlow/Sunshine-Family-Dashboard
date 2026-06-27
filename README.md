@@ -20,7 +20,7 @@ More photos and info on my projects page: <a href="https://tarlow.space/projects
 
 ### Core
 - **Member Profiles** – Each family member has a name, emoji, and color
-- **Vibe of the Day** – Daily featured photo
+- **Vibe of the Day** – Daily featured AI quote
 - **Weather Widget** – Current conditions + 5‑day forecast (OpenWeatherMap)
 - **Photo Carousel** – Auto‑rotating family photo slideshow with favorites and upload
 
