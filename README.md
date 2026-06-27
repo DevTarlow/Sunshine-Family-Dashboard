@@ -1,24 +1,56 @@
-# Family Dashboard
+# Sunshine Family Dashboard
 
-A local web application for managing family activities, built with Next.js, TypeScript, and Tailwind CSS.
+A local web application for managing family activities, built with Next.js 15, TypeScript, and Tailwind CSS. Runs on your local network for shared family access.
 
 ## Features
 
-- **Weekly Dinners**: Plan meals for each day of the week
-- **Weather Widget**: Display current weather conditions (requires OpenWeatherMap API key)
-- **Photo Carousel**: Auto-rotating slideshow of family photos
-- **Shared Notes**: Collaborative note-taking for family members
-- **To-Do List**: Track tasks with checkbox completion
-- **Grocery List**: Manage shopping items with "bought" status
+### Core
+- **Member Profiles** – Each family member has a name, emoji, and color
+- **Vibe of the Day** – Daily featured photo
+- **Weather Widget** – Current conditions + 5‑day forecast (OpenWeatherMap)
+- **Photo Carousel** – Auto‑rotating family photo slideshow with favorites and upload
+
+### Planning & Tracking
+- **Weekly Dinners** – 7‑day dinner grid with drag‑to‑reorder, AI suggestions, comments
+- **Weekly Meal Planner** – Full weekly meal planner with breakfast/lunch/dinner slots, recipe links
+- **Grocery List** – Categorized shopping list with copy‑to‑clipboard
+- **To‑Do List** – Tasks with completion tracking, reminder intervals, achievements
+- **Dining Out Log** – Monthly expense tracking with per‑member totals and last month comparison
+
+### Communication
+- **Shared Notes** – Collaborative note‑taking with edit history
+- **Comment Threads** – Inline replies on notes, dinners, dining entries, and planned meals
+- **Link Board** – Family bookmarks board
+- **Activity Feed** – Recent family activity log
+
+### Health & Lifestyle
+- **Fitness Tracker** – Weekly workout logging per member
+- **Meal Prep Fridge** – Track prepped meals with LLM‑generated emojis, consumption windows, and expiry alerts
+
+### Organization
+- **Calendar** – Monthly events with color‑coding, add/edit/delete
+- **Recipe Hub** – Bookmark recipes with OG metadata, ratings, categories, search, featured sorting
+- **Family Stats** – Aggregate statistics with 6‑month charts (dining, workouts, todos, photos)
+- **Archive** – Browse archived notes, deleted todos, and deleted meal prep items
+- **Achievements** – Gamification system with 12 badges across fitness, todos, photos, and dining
+
+### Administration
+- **Settings Modal** – Theme toggle, accent color, auto‑refresh, notifications, camera URL, AI configuration, widget visibility, data backup/restore
+- **Profile Modal** – Member backgrounds, favorite photos, personal stats
+- **Data Backup/Restore** – Export/import all database content as JSON
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: SQLite
-- **ORM**: Prisma
-- **Icons**: lucide-react
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 (App Router) |
+| UI Library | React 19 |
+| Language | TypeScript |
+| Styling | Tailwind CSS 3 |
+| Icons | lucide-react |
+| Database | SQLite |
+| ORM | Prisma 6 |
+| AI | OpenAI‑compatible local LLM (optional) |
 
 ## Setup Instructions
 
@@ -30,79 +62,119 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Update the `.env` file with your settings:
+Copy `.env` and fill in your values:
 
 ```env
-# OpenWeatherMap API Configuration
-OPENWEATHERMAP_API_KEY="your_actual_api_key_here"
+# Database
+DATABASE_URL="file:./dev.db"
+
+# OpenWeatherMap (required for weather)
+OPENWEATHERMAP_API_KEY="your_api_key_here"
 OPENWEATHERMAP_CITY="your_city_name"
-OPENWEATHERMAP_UNITS="imperial"  # or "metric" for Celsius
+OPENWEATHERMAP_UNITS="imperial"  # or "metric"
+
+# Google Gemini API (optional – used for dinner suggestions, celebrations)
+GEMINI_API_KEY="your_gemini_api_key"
 ```
 
-To get an API key:
-1. Visit [OpenWeatherMap](https://openweathermap.org/api)
-2. Sign up for a free account
-3. Generate an API key
-4. Replace `your_actual_api_key_here` with your key
+Get keys at:
+- **OpenWeatherMap**: https://openweathermap.org/api
+- **Gemini API**: https://ai.google.dev/
 
-### 3. Add Photos (Optional)
+### 3. Initialize the Database
 
-Add image files (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`) to the `public/photos/` folder for the carousel feature.
+```bash
+npx prisma migrate dev
+```
 
-### 4. Start the Development Server
+### 4. Add Photos (Optional)
+
+Add image files to `public/photos/` for the carousel feature. Add background images to `public/backgrounds/`. Set the Vibe of the Day at `public/Vibe/vibe-of-the-day-photo.jpg`.
+
+### 5. Configure a Local LLM (Optional)
+
+For AI features (dinner suggestions, food emojis, celebrations), configure a local LLM server in Settings → Local AI Configuration. Supports any OpenAI‑compatible endpoint (Ollama, LM Studio, etc.).
+
+### 6. Start the Development Server
 
 ```bash
 npm run dev
 ```
 
-The application will be accessible at:
+The application is accessible at:
 - **Local**: http://localhost:3000
-- **Network**: http://[your-local-ip]:3000
-
-The `-H 0.0.0.0` flag allows access from other devices on your local network.
+- **Network**: http://[your-local-ip]:3000 (the `-H 0.0.0.0` flag enables LAN access)
 
 ## Usage
 
-### Weekly Dinners
-- Click "Add" next to any day to set a dinner plan
-- Click "Edit" to modify an existing plan
-- Click the "X" to clear a plan
+### Navigation
+- **Desktop**: Use the top navigation bar or click the hamburger menu for the sidebar
+- **Mobile**: Use the bottom navigation bar or the "More" menu (three dots)
+- **Pages**: Dashboard (`/`), Calendar (`/?page=calendar`), Weekly Planner (`/?page=weekly-planner`), Recipe Hub (`/?page=recipes`), Family Stats (`/?page=family-stats`), Archive (`/?page=archive`)
 
-### Weather
-- Updates automatically based on your configured city
-- Shows temperature, conditions, and icon
-- Data refreshes every 10 minutes
+### Per‑Member Settings
+Each family member has their own theme (light/dark), accent color, notification preferences, LLM configuration, and widget visibility. Click the gear icon in the header to open Settings.
 
-### Photo Carousel
-- Automatically rotates every 10 seconds
-- Use arrow buttons to navigate manually
-- Click dots at the bottom to jump to specific photos
+### Unread Badges
+Six sections (Notes, Todos, Groceries, DiningOut, MealPrep, SharedLinks) show red badges when other members added items. Badges clear automatically when you view the section.
 
-### Shared Notes
-- Add notes using the text area at the top
-- Click "Edit" to modify existing notes
-- Click the "X" to delete notes
-- Shows timestamp of last update
+## Project Structure
 
-### To-Do List
-- Add tasks using the input field
-- Click checkbox to mark as complete
-- Click "X" to delete tasks
+```
+FamilyDashboard/
+├── app/
+│   ├── actions/             # Modular server actions (24 modules)
+│   │   ├── members.ts
+│   │   ├── dinners.ts
+│   │   ├── calendarEvents.ts
+│   │   ├── recipes.ts
+│   │   ├── weeklyPlanner.ts
+│   │   ├── charts.ts
+│   │   └── ...
+│   ├── actions.ts           # Barrel re‑export of all action modules
+│   ├── components/          # All React components
+│   ├── login/               # Login page
+│   ├── layout.tsx           # Root layout with navigation
+│   ├── page.tsx             # Dashboard + multi‑page routing
+│   └── globals.css          # Global styles
+├── lib/
+│   ├── prisma.ts            # Prisma client singleton
+│   ├── session.ts           # Session helpers
+│   ├── activityStore.ts     # In‑memory activity log
+│   └── navigation.tsx       # Navigation item definitions
+├── prisma/
+│   ├── schema.prisma        # DB schema (18 models)
+│   ├── migrations/          # Migration history
+│   └── dev.db               # SQLite database
+├── public/
+│   ├── photos/              # Family photos for Carousel
+│   ├── backgrounds/         # Background images for Profile modal
+│   ├── Vibe/                # Vibe of the Day photo
+│   ├── icons/               # PWA icons
+│   ├── manifest.json        # PWA manifest
+│   └── sw.js                # Service worker
+├── middleware.ts            # Route guard
+├── .env                     # Environment variables
+└── package.json
+```
 
-### Grocery List
-- Add items using the input field
-- Click checkbox to mark as bought  
-- Click "X" to remove items
+## PWA Support
+
+The dashboard can be installed as a Progressive Web App on supported devices for a native‑like experience. Tap "Add to Home Screen" in your browser.
 
 ## Database
 
-The app uses SQLite with Prisma ORM. The database file is located at `prisma/dev.db`.
+SQLite via Prisma. The database file is at `prisma/dev.db`.
 
-To reset the database:
-
+**Reset:**
 ```bash
 rm prisma/dev.db
-npx prisma db push
+npx prisma migrate dev
+```
+
+**Browse (Prisma Studio):**
+```bash
+npx prisma studio
 ```
 
 ## Building for Production
@@ -110,50 +182,6 @@ npx prisma db push
 ```bash
 npm run build
 npm start
-```
-
-## Network Access
-
-The app is configured to be accessible on your local network. Find your local IP address:
-
-**Linux/Mac:**
-```bash
-ip addr show  # Linux
-ifconfig      # Mac
-```
-
-**Windows:**
-```cmd
-ipconfig
-```
-
-Then access from other devices at: `http://[your-ip]:3000`
-
-## Project Structure
-
-```
-FamilyDashboard/
-├── app/
-│   ├── actions.ts           # Server Actions for data mutations
-│   ├── components/          # React components
-│   │   ├── Carousel.tsx
-│   │   ├── GroceryList.tsx
-│   │   ├── Notes.tsx
-│   │   ├── TodoList.tsx
-│   │   ├── Weather.tsx
-│   │   └── WeeklyDinners.tsx
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Home page
-├── lib/
-│   └── prisma.ts            # Prisma client instance
-├── prisma/
-│   ├── schema.prisma        # Database schema
-│   └── dev.db               # SQLite database (generated)
-├── public/
-│   └── photos/              # Photo carousel images
-├── .env                     # Environment variables
-└── package.json             # Dependencies and scripts
 ```
 
 ## License

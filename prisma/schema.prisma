@@ -8,39 +8,49 @@ datasource db {
 }
 
 model Member {
-  id              Int               @id @default(autoincrement())
-  name            String            @unique
-  emoji           String            @default("😊")
-  color           String            @default("blue")
-  theme           String            @default("light")
-  backgroundImage String?
-  createdAt       DateTime          @default(now())
-  todos           Todo[]
-  groceries       Grocery[]
-  notes           Note[]
-  diningOut       DiningOut[]
-  fitnessLogs     FitnessLog[]
-  mealPrepItems   MealPrepItem[]
-  readStates      MemberReadState[]
-  achievements    MemberAchievement[]
-  memberStats     MemberStats?
-  photoFavorites  PhotoFavorite[]
-  comments        Comment[]
-  sharedLinks     SharedLink[]
+  id                  Int               @id @default(autoincrement())
+  name                String            @unique
+  emoji               String            @default("😊")
+  color               String            @default("blue")
+  theme               String            @default("light")
+  accentColor         String            @default("blue")
+  notificationsEnabled Boolean          @default(true)
+  backgroundImage     String?
+  panelVisibility    String?
+  camUrl              String?
+  llmServerUrl        String?
+  llmModel            String?
+  aiProvider          String    @default("local")
+  createdAt           DateTime          @default(now())
+  todos               Todo[]
+  groceries           Grocery[]
+  notes               Note[]
+  diningOut           DiningOut[]
+  fitnessLogs         FitnessLog[]
+  mealPrepItems       MealPrepItem[]
+  readStates          MemberReadState[]
+  achievements        MemberAchievement[]
+  memberStats         MemberStats?
+  photoFavorites      PhotoFavorite[]
+  comments            Comment[]
+  sharedLinks         SharedLink[]
+  calendarEvents      CalendarEvent[]
+  recipeLinks         RecipeLink[]
+  plannedMeals        PlannedMeal[]
 }
 
 model FitnessLog {
   id       Int      @id @default(autoincrement())
   memberId Int
   member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  date     DateTime // stored as UTC midnight (2026-04-04T00:00:00.000Z)
+  date     DateTime
 
   @@unique([memberId, date])
 }
 
 model Dinner {
   id        Int       @id @default(autoincrement())
-  dayOfWeek String    @unique // e.g., "Monday"
+  dayOfWeek String    @unique
   meal      String
   comments  Comment[]
 }
@@ -53,24 +63,36 @@ model Note {
   memberId  Int?
   member    Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
   comments  Comment[]
+
+  @@index([createdAt])
 }
 
 model Todo {
-  id        Int      @id @default(autoincrement())
-  task      String
-  isDone    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  memberId  Int?
-  member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  id                 Int       @id @default(autoincrement())
+  task               String
+  isDone             Boolean   @default(false)
+  reminderInterval   Int?
+  lastReminderSentAt DateTime?
+  createdAt          DateTime  @default(now())
+  memberId           Int?
+  member             Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
 }
 
 model Grocery {
   id        Int      @id @default(autoincrement())
   item      String
   isBought  Boolean  @default(false)
+  category  String   @default("Other")
   createdAt DateTime @default(now())
   memberId  Int?
   member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+}
+
+model GroceryCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model DiningOut {
@@ -81,22 +103,27 @@ model DiningOut {
   memberId    Int?
   member      Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
   comments    Comment[]
+
+  @@index([date])
 }
 
 model MealPrepItem {
-  id        Int      @id @default(autoincrement())
-  label     String
-  imageUrl  String   @default("")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  memberId  Int?
-  member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  id              Int      @id @default(autoincrement())
+  label           String
+  imageUrl        String   @default("")
+  consumptionTime String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  memberId        Int?
+  member          Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }
 
 model MemberReadState {
   id         Int      @id @default(autoincrement())
   memberId   Int
-  section    String   // "notes" | "todos" | "groceries" | "diningOut" | "mealPrep"
+  section    String
   lastSeenAt DateTime @default(now())
   member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
@@ -109,7 +136,7 @@ model Achievement {
   name        String
   emoji       String
   description String
-  category    String              // "fitness" | "todo" | "photos" | "dining"
+  category    String
   members     MemberAchievement[]
 }
 
@@ -135,7 +162,7 @@ model MemberStats {
 model PhotoFavorite {
   id       Int    @id @default(autoincrement())
   memberId Int
-  filename String // e.g. "/photos/abc.jpg"
+  filename String
   member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@unique([memberId, filename])
@@ -149,18 +176,148 @@ model SharedLink {
   createdAt   DateTime @default(now())
   memberId    Int?
   member      Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model CalendarEvent {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @default("")
+  eventDate   DateTime
+  eventTime   String   @default("")
+  color       String   @default("blue")
+  createdAt   DateTime @default(now())
+  memberId    Int?
+  member      Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([eventDate])
+}
+
+model RecipeLink {
+  id          Int       @id @default(autoincrement())
+  url         String    @unique
+  title       String
+  description String    @default("")
+  imageUrl    String    @default("")
+  rating      Int       @default(0)
+  featured    Boolean   @default(false)
+  category    String    @default("Uncategorized")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  memberId    Int?
+  member      Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  comments    Comment[]
+  plannedMeals PlannedMeal[]
+
+  @@index([rating])
+  @@index([category])
+}
+
+model PlannedMeal {
+  id           Int        @id @default(autoincrement())
+  mealDate     DateTime
+  dayOfWeek    String
+  mealTime     String
+  mealName     String
+  sortOrder    Int        @default(0)
+  recipeLinkId Int?
+  recipeLink   RecipeLink? @relation(fields: [recipeLinkId], references: [id], onDelete: SetNull)
+  memberId     Int?
+  member       Member?     @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  comments     Comment[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([mealDate, mealTime, sortOrder])
+}
+
+model ArchivedMeal {
+  id          Int      @id @default(autoincrement())
+  originalId  Int?
+  mealDate    DateTime
+  dayOfWeek   String
+  mealTime    String
+  mealName    String
+  recipeLink  String?
+  archivedAt  DateTime @default(now())
+
+  @@index([mealDate])
+}
+
+model ArchivedNote {
+  id           Int      @id @default(autoincrement())
+  originalId   Int?
+  content      String
+  createdAt    DateTime
+  archivedAt   DateTime @default(now())
+  memberId     Int?
+  memberName   String?
+  memberEmoji  String?
+  memberColor  String?
+
+  @@index([archivedAt])
+}
+
+model DeletedTodo {
+  id           Int      @id @default(autoincrement())
+  originalId   Int?
+  task         String
+  isDone       Boolean  @default(false)
+  createdAt    DateTime
+  deletedAt    DateTime @default(now())
+  memberId     Int?
+  memberName   String?
+  memberEmoji  String?
+  memberColor  String?
+
+  @@index([deletedAt])
+}
+
+model DeletedMealPrepItem {
+  id              Int      @id @default(autoincrement())
+  originalId      Int?
+  label           String
+  imageUrl        String   @default("")
+  consumptionTime String?
+  createdAt       DateTime
+  deletedAt       DateTime @default(now())
+  memberId        Int?
+  memberName      String?
+  memberEmoji     String?
+  memberColor     String?
+
+  @@index([deletedAt])
+}
+
+model FamilySetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Comment {
-  id          Int       @id @default(autoincrement())
-  content     String
-  createdAt   DateTime  @default(now())
-  memberId    Int?
-  member      Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  noteId      Int?
-  note        Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  diningOutId Int?
-  diningOut   DiningOut? @relation(fields: [diningOutId], references: [id], onDelete: Cascade)
-  dinnerId    Int?
-  dinner      Dinner?   @relation(fields: [dinnerId], references: [id], onDelete: Cascade)
+  id            Int          @id @default(autoincrement())
+  content       String
+  createdAt     DateTime     @default(now())
+  memberId      Int?
+  member        Member?      @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  noteId        Int?
+  note          Note?        @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  diningOutId   Int?
+  diningOut     DiningOut?   @relation(fields: [diningOutId], references: [id], onDelete: Cascade)
+  dinnerId      Int?
+  dinner        Dinner?      @relation(fields: [dinnerId], references: [id], onDelete: Cascade)
+  recipeLinkId  Int?
+  recipeLink    RecipeLink?  @relation(fields: [recipeLinkId], references: [id], onDelete: Cascade)
+  plannedMealId Int?
+  plannedMeal   PlannedMeal? @relation(fields: [plannedMealId], references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+  @@index([diningOutId])
+  @@index([dinnerId])
+  @@index([recipeLinkId])
+  @@index([plannedMealId])
 }

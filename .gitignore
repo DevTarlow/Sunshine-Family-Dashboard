@@ -51,3 +51,23 @@ out/
 build/
 
 FamilyDashboard.code-workspace
+
+# user-uploaded backgrounds
+public/backgrounds/*.jpg
+public/backgrounds/*.png
+public/backgrounds/*.webp
+
+# changelog (scratch notes)
+UPDATE.md
+
+# generated app screenshots
+public/app-photos/
+
+# windows thumbnail cache
+Thumbs.db
+
+# catch-all debug logs
+*.log
+
+# IDE settings
+/.vscode

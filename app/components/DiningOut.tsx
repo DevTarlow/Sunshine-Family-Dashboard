@@ -8,6 +8,7 @@ import {
   deleteDiningOutEntry,
   markSectionRead,
   generateCelebration,
+  getLastMonthDiningOutTotal,
 } from "@/app/actions";
 import CelebrationToast from "./CelebrationToast";
 import MemberBadge from "./MemberBadge";
@@ -42,8 +43,13 @@ export default function DiningOut({ initialEntries, unreadCount }: DiningOutProp
   const [isAdding, setIsAdding] = useState(false);
   const [celebration, setCelebration] = useState<string | null>(null);
   const [openCommentEntryId, setOpenCommentEntryId] = useState<number | null>(null);
+  const [lastMonthTotal, setLastMonthTotal] = useState<number | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [markedRead, setMarkedRead] = useState(false);
+
+  useEffect(() => {
+    getLastMonthDiningOutTotal().then(setLastMonthTotal).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!sectionRef.current || unreadCount === 0 || markedRead) return;
@@ -144,6 +150,11 @@ export default function DiningOut({ initialEntries, unreadCount }: DiningOutProp
         <p className="text-xs text-orange-400 dark:text-orange-500 mt-1">
           ~${avgPerDay.toFixed(2)} / day avg ({daysElapsed} day{daysElapsed !== 1 ? "s" : ""} so far)
         </p>
+        {lastMonthTotal !== null && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Last month: <span className="font-semibold text-orange-400">${lastMonthTotal.toFixed(2)}</span>
+          </p>
+        )}
 
         {memberTotals.length > 0 && (
           <>

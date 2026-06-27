@@ -17,6 +17,7 @@ interface MealPrepItem {
   id: number;
   label: string;
   imageUrl: string;
+  consumptionTime?: string | null;
   createdAt: Date;
   updatedAt: Date;
   member: Member | null;
@@ -184,9 +185,16 @@ export default function MealPrepFridge({ initialItems, unreadCount }: MealPrepFr
                   <div className="flex flex-col h-full justify-between">
                     <p className="font-medium text-gray-800 dark:text-gray-100 text-sm truncate">{item.label}</p>
                     <div className="flex justify-between items-center mt-1">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </span>
+                        {item.consumptionTime && (
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded-full">
+                            Best by: {item.consumptionTime}
+                          </span>
+                        )}
+                      </div>
                       <MemberBadge member={item.member} />
                       <div className="flex gap-2">
                         <button

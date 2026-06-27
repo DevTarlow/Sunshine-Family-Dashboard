@@ -7,6 +7,7 @@ import {
   getCommentsForNote,
   getCommentsForDiningOut,
   getCommentsForDinner,
+  getCommentsForPlannedMeal,
   addComment,
   deleteComment,
 } from "@/app/actions";
@@ -22,7 +23,7 @@ type Comment = {
 };
 
 interface CommentThreadProps {
-  parentType: "note" | "diningOut" | "dinner";
+  parentType: "note" | "diningOut" | "dinner" | "plannedMeal";
   parentId: number;
 }
 
@@ -51,7 +52,9 @@ export default function CommentThread({ parentType, parentId }: CommentThreadPro
         ? () => getCommentsForNote(parentId)
         : parentType === "diningOut"
         ? () => getCommentsForDiningOut(parentId)
-        : () => getCommentsForDinner(parentId);
+        : parentType === "dinner"
+        ? () => getCommentsForDinner(parentId)
+        : () => getCommentsForPlannedMeal(parentId);
 
     fetchFn().then((data) => {
       if (!cancelled) {

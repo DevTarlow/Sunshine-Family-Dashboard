@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { getCurrentMember, getCurrentMemberTheme } from "@/lib/session";
+import { getCurrentMember, getCurrentMemberTheme, getCurrentMemberNotificationsEnabled } from "@/lib/session";
 import Link from "next/link";
 import { logOut, updateMemberTheme, getAchievementsData } from "@/app/actions";
 import { Moon, Sun } from "lucide-react";
@@ -10,6 +10,12 @@ import AchievementsDropdown from "@/app/components/AchievementsDropdown";
 import { MemberPresenceProvider } from "@/app/components/MemberPresenceContext";
 import AutoRefresh from "@/app/components/AutoRefresh";
 import ProfileModalTrigger from "@/app/components/ProfileModalTrigger";
+import SettingsModalTrigger from "@/app/components/SettingsModalTrigger";
+import DesktopNav from "@/app/components/DesktopNav";
+import SidebarToggle from "@/app/components/SidebarToggle";
+import MobileBottomNav from "@/app/components/MobileBottomNav";
+import MobileMoreMenu from "@/app/components/MobileMoreMenu";
+import PwaRegister from "@/app/components/PwaRegister";
 
 export const metadata: Metadata = {
   title: "Sunshine Family Dashboard",
@@ -23,26 +29,20 @@ export default async function RootLayout({
 }>) {
   const currentMember = await getCurrentMember();
   const theme = await getCurrentMemberTheme();
+  const notificationsEnabled = await getCurrentMemberNotificationsEnabled();
   const activities = getActivities();
   const lastSeenMap = getLastSeen();
   const achievementsData = currentMember ? await getAchievementsData() : null;
 
   return (
     <html lang="en" className={theme === "dark" ? "dark" : ""}>
-      <body
-        className="bg-gray-50 dark:bg-gray-950 antialiased"
-        style={currentMember?.backgroundImage ? {
-          backgroundImage: `url(${currentMember.backgroundImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-        } : undefined}
-      >
+      <body className="bg-gray-50 dark:bg-gray-950 antialiased">
         {currentMember && (
-          <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-            <span className="text-sm font-semibold text-gray-500 dark:text-gray-400 hidden sm:block">
-              Sunshine Family Dashboard
-            </span>
+          <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 md:px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+            <div className="flex items-center gap-3">
+              <SidebarToggle />
+              <DesktopNav />
+            </div>
             <div className="flex items-center gap-4 ml-auto">
               <ProfileModalTrigger member={currentMember} />
               <ActivityDropdown activities={activities} />
@@ -66,23 +66,29 @@ export default async function RootLayout({
                   {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
                 </button>
               </form>
-              <Link
-                href="/login"
-                className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors underline"
-              >
-                Switch Profile
-              </Link>
-              <form action={logOut}>
-                <button
-                  type="submit"
-                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+              <SettingsModalTrigger currentTheme={theme} notificationsEnabled={notificationsEnabled} />
+              <div className="hidden sm:flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors underline"
                 >
-                  Sign out
-                </button>
-              </form>
+                  Switch Profile
+                </Link>
+                <form action={logOut}>
+                  <button
+                    type="submit"
+                    className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              </div>
+              <MobileMoreMenu member={currentMember} />
             </div>
           </header>
         )}
+        {currentMember && <MobileBottomNav />}
+        <PwaRegister />
         <AutoRefresh />
         <MemberPresenceProvider lastSeenMap={lastSeenMap} currentMemberId={currentMember?.id ?? null}>
           {children}

@@ -11,6 +11,9 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.startsWith("/photos") ||
     pathname.startsWith("/backgrounds") ||
+    pathname === "/sw.js" ||
+    pathname === "/manifest.json" ||
+    pathname.startsWith("/icons") ||
     pathname === "/favicon.ico"
   ) {
     return NextResponse.next();

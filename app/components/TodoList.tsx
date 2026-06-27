@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { createTodo, deleteTodo, markSectionRead, generateCelebration } from "@/app/actions";
-import { X, Plus } from "lucide-react";
+import { createTodo, deleteTodo, toggleTodo, markSectionRead, generateCelebration } from "@/app/actions";
+import { X, Plus, Check } from "lucide-react";
 import MemberBadge from "./MemberBadge";
 import CelebrationToast from "./CelebrationToast";
 
@@ -51,11 +51,15 @@ export default function TodoList({ initialTodos, unreadCount }: TodoListProps) {
     e.preventDefault();
     if (!newTask.trim()) return;
     const task = newTask.trim();
-    await createTodo(task);
+    await createTodo(task, null);
     setNewTask("");
     generateCelebration(`a new to-do task was added: "${task}"`).then((msg) => {
       if (msg) setCelebration(msg);
     });
+  };
+
+  const handleToggle = async (id: number, isDone: boolean) => {
+    await toggleTodo(id, !isDone);
   };
 
   const handleDelete = async (id: number) => {
@@ -64,6 +68,10 @@ export default function TodoList({ initialTodos, unreadCount }: TodoListProps) {
       if (msg) setCelebration(msg);
     });
   };
+
+  const activeTodos = initialTodos.filter((t) => !t.isDone);
+  const doneTodos = initialTodos.filter((t) => t.isDone);
+  const sortedTodos = [...activeTodos, ...doneTodos];
 
   return (
     <>
@@ -77,45 +85,62 @@ export default function TodoList({ initialTodos, unreadCount }: TodoListProps) {
           </span>
         )}
       </div>
-      
-      <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 mb-4">
         <input
           type="text"
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
           placeholder="Add a new task..."
-          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 min-w-0 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md transition flex items-center gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Add
+          </button>
+        </div>
       </form>
 
       <div className="space-y-2 max-h-96 overflow-y-auto">
-        {initialTodos.length === 0 ? (
+        {sortedTodos.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400 text-center py-4">No tasks yet. Add one above!</p>
         ) : (
-          initialTodos.map((todo) => (
+          sortedTodos.map((todo) => (
             <div
               key={todo.id}
-              className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 transition"
+              className={`flex items-center gap-2 p-2 rounded-md transition ${
+                todo.isDone
+                  ? "bg-gray-100 dark:bg-gray-700/50 opacity-60"
+                  : "bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
+              }`}
             >
+              <button
+                onClick={() => handleToggle(todo.id, todo.isDone)}
+                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition shrink-0 ${
+                  todo.isDone
+                    ? "bg-green-500 border-green-500"
+                    : "border-gray-300 dark:border-gray-500 hover:border-green-500"
+                }`}
+              >
+                {todo.isDone && <Check className="w-4 h-4 text-white" />}
+              </button>
+
               <div className="flex-1 min-w-0">
-                <span className="block truncate dark:text-gray-100">
+                <span className={`block truncate ${todo.isDone ? "line-through text-gray-400 dark:text-gray-500" : "dark:text-gray-100"}`}>
                   {todo.task}
                 </span>
-                <div className="mt-0.5">
-                  <MemberBadge member={todo.member} />
+                <div className="flex items-center gap-2 mt-0.5 min-w-0">
+                  <span className="shrink-0"><MemberBadge member={todo.member} /></span>
                 </div>
               </div>
-              
+
               <button
                 onClick={() => handleDelete(todo.id)}
-                className="text-red-400 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition flex-shrink-0"
+                className="text-red-400 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
