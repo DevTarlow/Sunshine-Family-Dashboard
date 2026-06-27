@@ -101,7 +101,14 @@ export default function DiningOut({ initialEntries, unreadCount }: DiningOutProp
     setIsAdding(false);
     generateCelebration(`the family just logged a dining out expense: ${description}`).then((msg) => {
       if (msg) setCelebration(msg);
-    });
+    }).catch(() => {});
+  }
+
+  async function handleDelete(id: number) {
+    const entry = initialEntries.find((e) => e.id === id);
+    const msg = await generateCelebration(`a dining out entry "${entry?.description ?? "entry"}" was removed`);
+    if (msg) setCelebration(msg);
+    await deleteDiningOutEntry(id);
   }
 
   async function handleSaveEdit(id: number) {
@@ -305,7 +312,7 @@ export default function DiningOut({ initialEntries, unreadCount }: DiningOutProp
                     <Pencil size={14} />
                   </button>
                   <button
-                    onClick={() => deleteDiningOutEntry(entry.id)}
+                    onClick={() => handleDelete(entry.id)}
                     className="text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
                     aria-label="Delete"
                   >

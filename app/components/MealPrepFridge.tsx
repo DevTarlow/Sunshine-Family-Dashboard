@@ -72,7 +72,7 @@ export default function MealPrepFridge({ initialItems, unreadCount }: MealPrepFr
       setNewLabel("");
       generateCelebration(`a new meal prep item was added to the fridge: "${label}"`).then((msg) => {
         if (msg) setCelebration(msg);
-      });
+      }).catch(() => {});
     } finally {
       setLoading(false);
     }
@@ -92,9 +92,6 @@ export default function MealPrepFridge({ initialItems, unreadCount }: MealPrepFr
 
   const handleDelete = async (id: number) => {
     await deleteMealPrepItem(id);
-    generateCelebration("a meal prep item was removed from the fridge").then((msg) => {
-      if (msg) setCelebration(msg);
-    });
   };
 
   return (

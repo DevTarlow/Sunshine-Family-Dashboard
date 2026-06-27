@@ -56,10 +56,13 @@ export default function CommentThread({ parentType, parentId }: CommentThreadPro
         ? () => getCommentsForDinner(parentId)
         : () => getCommentsForPlannedMeal(parentId);
 
-    fetchFn().then((data) => {
+fetchFn().then((data) => {
       if (!cancelled) {
-        // Prisma Date objects come as strings over the wire from server actions
         setComments(data as Comment[]);
+        setLoading(false);
+      }
+    }).catch(() => {
+      if (!cancelled) {
         setLoading(false);
       }
     });

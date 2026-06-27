@@ -65,7 +65,7 @@ export default function LinkBoard({ initialLinks, unreadCount }: LinkBoardProps)
     setNewDescription("");
     generateCelebration("a new link was shared on the family dashboard").then((msg) => {
       if (msg) setCelebration(msg);
-    });
+    }).catch(() => {});
   };
 
   const startEdit = (link: SharedLink) => {
@@ -82,10 +82,9 @@ export default function LinkBoard({ initialLinks, unreadCount }: LinkBoardProps)
   };
 
   const handleDelete = async (id: number) => {
+    const msg = await generateCelebration("a shared link was removed from the family dashboard");
+    if (msg) setCelebration(msg);
     await deleteSharedLink(id);
-    generateCelebration("a shared link was removed from the family dashboard").then((msg) => {
-      if (msg) setCelebration(msg);
-    });
   };
 
   return (

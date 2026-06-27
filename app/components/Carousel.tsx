@@ -62,13 +62,16 @@ export default function Carousel({ photos, initialFavorites = [] }: CarouselProp
       setTimeout(() => setUploadSuccess(false), 3000);
       generateCelebration("a family photo was just uploaded to the dashboard").then((msg) => {
         if (msg) setCelebration(msg);
-      });
+      }).catch(() => {});
     });
   }
 
   function handleDelete(photoPath: string) {
     const filename = filenameFromPath(photoPath);
     setDeletingFile(filename);
+    generateCelebration(`a family photo "${filename}" was removed from the dashboard`).then((msg) => {
+      if (msg) setCelebration(msg);
+    }).catch(() => {});
     startTransition(async () => {
       await deletePhoto(filename);
       setDeletingFile(null);

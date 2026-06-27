@@ -65,6 +65,8 @@ export default function ProfileModal({ member, isOpen, onClose }: ProfileModalPr
       setProfileData(data);
       if (data) setFavorites(new Set(data.favoritePhotos));
       setIsLoading(false);
+    }).catch(() => {
+      setIsLoading(false);
     });
   }, [isOpen]);
 

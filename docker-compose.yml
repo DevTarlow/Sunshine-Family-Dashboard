@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  family-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./public/photos:/app/public/photos:ro
+      - ./public/backgrounds:/app/public/backgrounds:ro
+      - db-data:/app/prisma
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - OPENWEATHERMAP_API_KEY=
+      - OPENWEATHERMAP_CITY=
+      - OPENWEATHERMAP_UNITS=imperial
+    restart: unless-stopped
+    stop_grace_period: 10s
+
+volumes:
+  db-data:

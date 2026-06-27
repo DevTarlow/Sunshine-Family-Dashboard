@@ -85,6 +85,8 @@ export default function GroceryList({ initialGroceries, unreadCount }: GroceryLi
 
   const handleRemoveAll = async () => {
     if (!window.confirm("Remove all grocery items?")) return;
+    const msg = await generateCelebration("all grocery items were cleared from the family list");
+    if (msg) setCelebration(msg);
     await deleteAllGroceries();
   };
 
